@@ -19,8 +19,10 @@ def assert_success(receipt):
 
 def test_full_deadlock_and_recovery_lifecycle():
     factory = get_contract_factory(contract_file_path=CONTRACT)
-    contract = factory.deploy(account=get_default_account(), **TX_KW)
+    account = get_default_account()
+    contract = factory.deploy(account=account, **TX_KW)
     assert contract.address
+    actor = account.address
 
     created = contract.create_group(["KNOT live three-way cycle", 1]).transact(**TX_KW)
     assert_success(created)
@@ -28,6 +30,7 @@ def test_full_deadlock_and_recovery_lifecycle():
     add_a = contract.add_commitment(
         [
             1,
+            actor,
             "A will issue DESIGN-1.",
             "PAYCONF-1 has been issued.",
             "DESIGN-1 is issued.",
@@ -40,6 +43,7 @@ def test_full_deadlock_and_recovery_lifecycle():
     add_b = contract.add_commitment(
         [
             1,
+            actor,
             "B will issue PAYCONF-1.",
             "VERIFY-1 has been issued.",
             "PAYCONF-1 is issued.",
@@ -52,6 +56,7 @@ def test_full_deadlock_and_recovery_lifecycle():
     add_c = contract.add_commitment(
         [
             1,
+            actor,
             "C will issue VERIFY-1.",
             "DESIGN-1 has been issued.",
             "VERIFY-1 is issued.",

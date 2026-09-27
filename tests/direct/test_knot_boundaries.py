@@ -20,6 +20,7 @@ def test_text_bounds_are_enforced(direct_vm, direct_deploy, direct_alice):
     with direct_vm.expect_revert("obligation exceeds"):
         contract.add_commitment(
             group_id,
+            direct_alice,
             "x" * 701,
             "condition",
             "output",
@@ -34,9 +35,12 @@ def test_non_actor_cannot_mark_satisfied(
     direct_vm.sender = direct_alice
     contract = direct_deploy(CONTRACT, sdk_version="v0.2.12")
     group_id = contract.create_group("Actors", 0)
-    a = contract.add_commitment(group_id, "A", "Need B", "A done", True, 1)
-    with direct_vm.prank(direct_bob):
-        contract.add_commitment(group_id, "B", "Need A", "B done", True, 2)
+    a = contract.add_commitment(
+        group_id, direct_alice, "A", "Need B", "A done", True, 1
+    )
+    contract.add_commitment(
+        group_id, direct_bob, "B", "Need A", "B done", True, 2
+    )
     contract.seal_group(group_id)
 
     with direct_vm.prank(direct_bob):

@@ -18,7 +18,10 @@ if (!existsSync(bin)) {
   fail('local GenLayer CLI is missing. Run npm install in this repository first.');
 }
 
-const versionOutput = execFileSync(bin, ['--version'], { encoding: 'utf8' }).trim();
+const versionOutput = execFileSync(bin, ['--version'], {
+  encoding: 'utf8',
+  shell: process.platform === 'win32',
+}).trim();
 if (!versionOutput.includes(EXPECTED_VERSION) || /0\.40|rc2/i.test(versionOutput)) {
   fail(`expected local GenLayer CLI ${EXPECTED_VERSION}; got: ${versionOutput}`);
 }

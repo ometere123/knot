@@ -42,6 +42,14 @@ The model never sees or selects recovery policy. Lowest-break-cost recovery is d
 
 Once a commitment receives an override, it is no longer active and cannot participate in a later proof as the same active edge.
 
+### Unrelated caller consumes open membership slots
+
+Only the group creator can add commitments. The actor is an explicit commitment field, so the creator can register the intended participant without granting arbitrary wallets permission to consume the bounded slots.
+
+### Duplicate cycle certificate inflation
+
+The contract indexes every rotation of a certified cycle by group and ordered commitment IDs. A repeated equivalent submission is rejected before another certificate or cycle-count increment is created, including CERTIFY_ONLY cycles.
+
 ## Deliberate non-goals
 
 KNOT does not prove that:

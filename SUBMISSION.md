@@ -96,14 +96,25 @@ The repository intentionally does not target Studio-dev / 61997.
 
 ## Live evidence
 
-To be filled only after actual deployment and finalization:
+The corrected source was deployed to stable Studionet (chain 61999):
 
-- Contract address: `PENDING`
-- Deployment transaction: `PENDING`
-- Network: Studionet 61999
-- Valid-cycle transaction: `PENDING`
-- Invalid/ambiguous-cycle evidence: `PENDING`
-- Direct-mode result: **20/20 passed in GitHub Actions** (stable GenVM `v0.2.12`; repository CLI remains `0.39.1`)
-- Live integration result: `PENDING`
+- Contract: `0x2cd385371fA71242cBE1c820e54d0899F9B48431`
+- Deployment transaction: [`0x487d44204d31a0995f8693c5c99151518e484bc1c830c1f3b97e7b23419af375`](https://explorer-studio.genlayer.com/tx/0x487d44204d31a0995f8693c5c99151518e484bc1c830c1f3b97e7b23419af375)
+- Deployment result: `FINALIZED / ACCEPTED / MAJORITY_AGREE / SUCCESS`
+- Source commit at deployment: recorded in `REVIEW_EVIDENCE.md`
+- `runtime_chain_id()`: `61999`
 
-No live result is claimed before it exists.
+The final live cycle used group `1` and commitments `[1, 2, 3]`:
+
+- create group: `0x8fdefd149fea6fc9de529dc7e1676ed6d416874ca50f5de1c5db723e724682ea`
+- add A: `0x4a9e98fde8136dc3e6f5fffe7d3755de11ed98b5c80c0a29cad93519123f9976`
+- add B: `0xdf54a36a6575ac353187c1c302ffafb28122a119b5ebd039f76330ce6a618461`
+- add C: `0xaac3c9e3549c611bb58597666e6f1d14617ed135899743b94fa807be21590afa`
+- seal: `0xfa59910a81168615828e57b98b710b2776e9e55a6a9cf839764dfcaf03733bbb`
+- cycle proof: [`0x7f3b340de54202552a6841f0d6fb0538c004d0f89b2d8109e48ad1e5fea2495a`](https://explorer-studio.genlayer.com/tx/0x7f3b340de54202552a6841f0d6fb0538c004d0f89b2d8109e48ad1e5fea2495a)
+
+The cycle certificate returned `[1, 2, 3]`, `cycle_count == 1`, and `dependency_count == 3`. `LOWEST_BREAK_COST` deterministically selected commitment `3` (cost `10`) and stored `override_cycle_id == 1` with status `OVERRIDDEN`.
+
+A separate group `2` was sealed with unrelated declarations. Its negative proof transaction was [`0x5378bcd4bebcb9168c86f79fbca63016bdc8f56a34b1892c9a78c0c26d2f5f60`](https://explorer-studio.genlayer.com/tx/0x5378bcd4bebcb9168c86f79fbca63016bdc8f56a34b1892c9a78c0c26d2f5f60). It finalized with consensus agreement but contract execution failed closed; the group readback remained `cycle_count == 0`.
+
+Direct Mode: **22/22 passed** (stable GenVM `v0.2.12`; repository CLI `0.39.1`).

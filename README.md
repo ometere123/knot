@@ -289,7 +289,7 @@ pytest tests/direct -v -s
 
 The Direct Mode suite explicitly pins the stable GenVM `v0.2.12` artefact while the repository CLI remains exactly `0.39.1`. This avoids the current upstream testing-suite auto-detection path that resolves to a v0.3 RC with a renamed universal runner artefact.
 
-Verified in GitHub Actions: **20/20 Direct Mode tests passed**.
+Verified locally: **22/22 Direct Mode tests passed**. The suite includes creator-controlled open-group admission and duplicate-cycle certificate rejection.
 
 The direct suite covers:
 
@@ -382,10 +382,4 @@ Verified in GitHub Actions:
 - toolchain/network guard passes for stable Studionet **61999**;
 - **20/20 Direct Mode tests pass** using the stable GenVM `v0.2.12` artefact.
 
-Still requires a funded/usable Studionet account to:
-
-- execute the live 61999 integration scenario;
-- deploy the final contract;
-- record the address, deployment transaction and finalized lifecycle receipts.
-
-No deployment address is claimed until those steps are actually completed.
+Final live Studionet evidence is recorded in `REVIEW_EVIDENCE.md` and `DEPLOYMENT.md`.

@@ -105,7 +105,28 @@ The high-signal scenario should produce a fresh deployment and prove:
 5. durable cycle certificate;
 6. deterministic lowest-break-cost recovery.
 
-## 7. Capture reviewer evidence
+## 7. Final verified deployment and reviewer evidence
+
+The final corrected deployment is:
+
+| Field | Observed value |
+|---|---|
+| Network | Studionet |
+| Chain ID | 61999 |
+| RPC | `https://studio.genlayer.com/api` |
+| Contract | `0x2cd385371fA71242cBE1c820e54d0899F9B48431` |
+| Deployment transaction | `0x487d44204d31a0995f8693c5c99151518e484bc1c830c1f3b97e7b23419af375` |
+| Deployment result | `FINALIZED / ACCEPTED / MAJORITY_AGREE / SUCCESS` |
+| Runtime chain readback | `61999` |
+| Direct Mode | `22/22 passed` |
+
+Explorer: [final KNOT deployment](https://explorer-studio.genlayer.com/tx/0x487d44204d31a0995f8693c5c99151518e484bc1c830c1f3b97e7b23419af375)
+
+The deployed source includes the two narrow hardening fixes documented in `REVIEW_EVIDENCE.md`: only the group creator can fill open commitment slots, and a sealed cycle is indexed in every rotation so an equivalent certificate cannot be minted repeatedly.
+
+The final live evidence transaction table and state readbacks are maintained in `REVIEW_EVIDENCE.md`.
+
+## 8. Capture reviewer evidence
 
 Record:
 
@@ -123,6 +144,6 @@ Record:
 
 Update `SUBMISSION.md` only with observed values. Do not fabricate deployment or test evidence.
 
-## 8. Final pre-submission review
+## 9. Final pre-submission review
 
 Verify that there is still no frontend and that the repository remains a standalone reusable contract primitive.

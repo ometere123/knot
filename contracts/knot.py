@@ -112,6 +112,7 @@ class IKnot:
         def add_commitment(
             self,
             group_id: u256,
+            actor: Address,
             obligation: str,
             prerequisite: str,
             provides: str,
@@ -282,6 +283,7 @@ class Knot(gl.Contract):
     cycles: TreeMap[u256, CycleCertificate]
     dependencies: TreeMap[u256, DependencyReceipt]
     dependency_index: TreeMap[str, u256]
+    cycle_index: TreeMap[str, u256]
     next_group_id: u256
     next_commitment_id: u256
     next_cycle_id: u256
@@ -326,6 +328,17 @@ class Knot(gl.Contract):
 
     def _dependency_key(self, waiter_id: u256, provider_id: u256) -> str:
         return f"{int(waiter_id)}:{int(provider_id)}"
+
+    def _cycle_key(self, group_id: u256, ids: list[int]) -> str:
+        return f"{int(group_id)}:" + ",".join(str(value) for value in ids)
+
+    def _cycle_was_proved(self, group_id: u256, ids: list[int]) -> bool:
+        count = len(ids)
+        for offset in range(count):
+            rotated = ids[offset:] + ids[:offset]
+            if self.cycle_index.get(self._cycle_key(group_id, rotated)) is not None:
+                return True
+        return False
 
     def _existing_dependency_id(self, waiter_id: u256, provider_id: u256) -> u256:
         key = self._dependency_key(waiter_id, provider_id)
@@ -513,6 +526,7 @@ class Knot(gl.Contract):
     def add_commitment(
         self,
         group_id: u256,
+        actor: Address,
         obligation: str,
         prerequisite: str,
         provides: str,
@@ -520,6 +534,12 @@ class Knot(gl.Contract):
         break_cost: u256,
     ) -> u256:
         group = self._require_group(group_id)
+        if group.creator != gl.message.sender_address:
+            raise gl.vm.UserError(
+                f"{ERR_AUTH}: only group creator may add commitments"
+            )
+        if not hasattr(actor, "as_bytes"):
+            actor = Address(actor)
         if int(group.status) != GROUP_OPEN:
             raise gl.vm.UserError(f"{ERR_STATE}: group is sealed")
         if len(group.commitment_ids) >= MAX_GROUP_COMMITMENTS:
@@ -549,7 +569,7 @@ class Knot(gl.Contract):
 
         commitment = self.commitments.get_or_insert_default(commitment_id)
         commitment.group_id = group_id
-        commitment.actor = gl.message.sender_address
+        commitment.actor = actor
         commitment.obligation = obligation
         commitment.prerequisite = prerequisite
         commitment.provides = provides
@@ -565,7 +585,7 @@ class Knot(gl.Contract):
         CommitmentAdded(
             commitment_id,
             group_id,
-            gl.message.sender_address,
+            actor,
             breakable=bool(breakable),
             break_cost=cost,
         ).emit()
@@ -668,6 +688,10 @@ class Knot(gl.Contract):
             raise gl.vm.UserError(f"{ERR_STATE}: group must be sealed")
 
         ids = self._copy_cycle_ids(cycle_ids)
+        if self._cycle_was_proved(group_id, ids):
+            raise gl.vm.UserError(
+                f"{ERR_STATE}: deadlock cycle has already been proved"
+            )
         payloads = self._edge_payloads(group_id, ids)
 
         # Reuse already-proved semantic edges. Only missing edges require new
@@ -734,6 +758,11 @@ class Knot(gl.Contract):
         certificate.recovery_commitment_id = recovery_id
         for raw_id in ids:
             certificate.commitment_ids.append(u256(raw_id))
+
+        count = len(ids)
+        for offset in range(count):
+            rotated = ids[offset:] + ids[:offset]
+            self.cycle_index[self._cycle_key(group_id, rotated)] = cycle_id
 
         group.cycle_count = u32(int(group.cycle_count) + 1)
 

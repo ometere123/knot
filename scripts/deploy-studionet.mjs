@@ -15,13 +15,19 @@ function fail(message) {
 }
 
 if (!existsSync(bin)) fail('run npm install first; local genlayer CLI is missing');
-const version = execFileSync(bin, ['--version'], { encoding: 'utf8' }).trim();
+const spawnOptions = {
+  shell: process.platform === 'win32',
+};
+const version = execFileSync(bin, ['--version'], {
+  encoding: 'utf8',
+  ...spawnOptions,
+}).trim();
 if (!version.includes(EXPECTED_VERSION) || /0\.40|rc2/i.test(version)) {
   fail(`refusing deployment with ${version}; KNOT requires local CLI ${EXPECTED_VERSION}`);
 }
 
-execFileSync(bin, ['network', 'set', 'studionet'], { stdio: 'inherit' });
-const info = execFileSync(bin, ['network', 'info'], { encoding: 'utf8' });
+execFileSync(bin, ['network', 'set', 'studionet'], { stdio: 'inherit', ...spawnOptions });
+const info = execFileSync(bin, ['network', 'info'], { encoding: 'utf8', ...spawnOptions });
 console.log(info);
 if (!info.includes(EXPECTED_CHAIN) || !info.includes('studio.genlayer.com')) {
   fail(`network info did not prove stable Studionet chain ${EXPECTED_CHAIN}`);
@@ -31,5 +37,5 @@ console.log(`Deploying KNOT to stable Studionet ${EXPECTED_CHAIN} via ${EXPECTED
 execFileSync(
   bin,
   ['deploy', '--contract', 'contracts/knot.py', '--rpc', EXPECTED_RPC],
-  { stdio: 'inherit' },
+  { stdio: 'inherit', ...spawnOptions },
 );

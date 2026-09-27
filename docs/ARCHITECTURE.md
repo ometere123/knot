@@ -19,6 +19,8 @@ The group creator chooses one of two recovery policies before sealing:
 1. `CERTIFY_ONLY`: prove the cycle but do not alter commitment state.
 2. `LOWEST_BREAK_COST`: after a valid cycle is proved, grant an override to the breakable commitment with the lowest declared cost, tie-breaking by commitment ID.
 
+Only the group creator may add commitments while the group is open. This prevents an unrelated wallet from consuming the bounded membership slots before the intended participants register. Once a cycle is certified, all cyclic rotations are indexed, so the same sealed cycle cannot create duplicate certificates or inflate `cycle_count`.
+
 ## Semantic boundary
 
 For a submitted ordered cycle `[A, B, C]`, KNOT asks GenLayer consensus to judge only these edges:
