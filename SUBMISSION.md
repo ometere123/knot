@@ -103,7 +103,7 @@ To be filled only after actual deployment and finalization:
 - Network: Studionet 61999
 - Valid-cycle transaction: `PENDING`
 - Invalid/ambiguous-cycle evidence: `PENDING`
-- Direct-mode result: `PENDING`
+- Direct-mode result: **20/20 passed in GitHub Actions** (stable GenVM `v0.2.12`; repository CLI remains `0.39.1`)
 - Live integration result: `PENDING`
 
 No live result is claimed before it exists.
