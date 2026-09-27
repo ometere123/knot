@@ -1,0 +1,18 @@
+{
+  "name": "knot-genlayer",
+  "version": "0.1.0",
+  "private": true,
+  "description": "KNOT: semantic deadlock detection and deterministic recovery for GenLayer Studionet 61999",
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "genlayer": "0.39.1"
+  },
+  "scripts": {
+    "cli:version": "genlayer --version",
+    "toolchain:check": "node scripts/check-toolchain.mjs",
+    "network:studionet": "genlayer network set studionet && genlayer network info",
+    "deploy:studionet": "node scripts/deploy-studionet.mjs"
+  }
+}
