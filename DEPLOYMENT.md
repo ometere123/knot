@@ -114,15 +114,18 @@ The final corrected deployment is:
 | Network | Studionet |
 | Chain ID | 61999 |
 | RPC | `https://studio.genlayer.com/api` |
-| Contract | `0x2cd385371fA71242cBE1c820e54d0899F9B48431` |
-| Deployment transaction | `0x487d44204d31a0995f8693c5c99151518e484bc1c830c1f3b97e7b23419af375` |
+| Contract | `0x0eF825bde4e7bB8D90F5Cc2aD52E80945E9a4768` |
+| Deployment transaction | `0x95182bb4844e9adc9af3f88697019a54c98d51351cdb47845c3bbb064f53dd38` |
+| Source commit | `a1679cf4a59d74c463d0bc1810933a45f321639d` |
+| Source SHA-256 | `145b1f682af7baf075e31df85824ba3747a79d4998c14b0bd9ba807008a27a99` |
+| Source bytes | `35019` |
 | Deployment result | `FINALIZED / ACCEPTED / MAJORITY_AGREE / SUCCESS` |
 | Runtime chain readback | `61999` |
-| Direct Mode | `22/22 passed` |
+| Direct Mode | `24/24 passed` |
 
-Explorer: [final KNOT deployment](https://explorer-studio.genlayer.com/tx/0x487d44204d31a0995f8693c5c99151518e484bc1c830c1f3b97e7b23419af375)
+Explorer: [final KNOT deployment](https://explorer-studio.genlayer.com/tx/0x95182bb4844e9adc9af3f88697019a54c98d51351cdb47845c3bbb064f53dd38)
 
-The deployed source includes the two narrow hardening fixes documented in `REVIEW_EVIDENCE.md`: only the group creator can fill open commitment slots, and a sealed cycle is indexed in every rotation so an equivalent certificate cannot be minted repeatedly.
+The deployed source includes the three narrow hardening fixes documented in `REVIEW_EVIDENCE.md`: only the group creator can fill open commitment slots, every named actor must approve the exact recovery terms before sealing, and a sealed cycle is indexed in every rotation so an equivalent certificate cannot be minted repeatedly.
 
 The final live evidence transaction table and state readbacks are maintained in `REVIEW_EVIDENCE.md`.
 

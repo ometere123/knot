@@ -46,6 +46,10 @@ Once a commitment receives an override, it is no longer active and cannot partic
 
 Only the group creator can add commitments. The actor is an explicit commitment field, so the creator can register the intended participant without granting arbitrary wallets permission to consume the bounded slots.
 
+### Creator attributes unaccepted recovery terms to another actor
+
+Adding a commitment does not constitute actor consent. The named actor must approve the exact stored commitment before the creator can seal the group. This binds the actor address, declarations, breakability and break cost to an explicit signed approval.
+
 ### Duplicate cycle certificate inflation
 
 The contract indexes every rotation of a certified cycle by group and ordered commitment IDs. A repeated equivalent submission is rejected before another certificate or cycle-count increment is created, including CERTIFY_ONLY cycles.

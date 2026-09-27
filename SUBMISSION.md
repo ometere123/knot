@@ -98,23 +98,22 @@ The repository intentionally does not target Studio-dev / 61997.
 
 The corrected source was deployed to stable Studionet (chain 61999):
 
-- Contract: `0x2cd385371fA71242cBE1c820e54d0899F9B48431`
-- Deployment transaction: [`0x487d44204d31a0995f8693c5c99151518e484bc1c830c1f3b97e7b23419af375`](https://explorer-studio.genlayer.com/tx/0x487d44204d31a0995f8693c5c99151518e484bc1c830c1f3b97e7b23419af375)
+- Contract: `0x0eF825bde4e7bB8D90F5Cc2aD52E80945E9a4768`
+- Deployment transaction: [`0x95182bb4844e9adc9af3f88697019a54c98d51351cdb47845c3bbb064f53dd38`](https://explorer-studio.genlayer.com/tx/0x95182bb4844e9adc9af3f88697019a54c98d51351cdb47845c3bbb064f53dd38)
 - Deployment result: `FINALIZED / ACCEPTED / MAJORITY_AGREE / SUCCESS`
-- Source commit at deployment: recorded in `REVIEW_EVIDENCE.md`
+- Source commit at deployment: `a1679cf4a59d74c463d0bc1810933a45f321639d`
 - `runtime_chain_id()`: `61999`
 
-The final live cycle used group `1` and commitments `[1, 2, 3]`:
+The final actor-consent live cycle used group `2` and commitments `[2, 3, 4]`:
 
-- create group: `0x8fdefd149fea6fc9de529dc7e1676ed6d416874ca50f5de1c5db723e724682ea`
-- add A: `0x4a9e98fde8136dc3e6f5fffe7d3755de11ed98b5c80c0a29cad93519123f9976`
-- add B: `0xdf54a36a6575ac353187c1c302ffafb28122a119b5ebd039f76330ce6a618461`
-- add C: `0xaac3c9e3549c611bb58597666e6f1d14617ed135899743b94fa807be21590afa`
-- seal: `0xfa59910a81168615828e57b98b710b2776e9e55a6a9cf839764dfcaf03733bbb`
-- cycle proof: [`0x7f3b340de54202552a6841f0d6fb0538c004d0f89b2d8109e48ad1e5fea2495a`](https://explorer-studio.genlayer.com/tx/0x7f3b340de54202552a6841f0d6fb0538c004d0f89b2d8109e48ad1e5fea2495a)
+- create group: `0x833336b11be721f70ab7b9ffd164cac9d93ae47685aa22b21130dceb80880115`
+- add commitments: `0xd59d11ba94af2fcd45846a3bee1ee94f61f476ed45c8c7aec88538266c6c230b`, `0x4b902cc17373b7c508d300738d4a528669cd864c38d5a893c514b833e742d715`, `0xe32f546048b727f9a3ee0e51558c322157ba3d1cef5ca3a7f422459d13c79702`
+- actor approvals: `0x2e913cebdf6f463ffadacc3d70caa156ab592f25c01d77b1514ede12a905cefe`, `0x2e325e1f8ad0057e86f56369ca4be1fe801363aff7e701ef10f527a21afda46e`, `0x15ef333b7b2bb94316be03419b0b9d430ac94e0ac7469aea0ed34f2392d04f21`
+- seal: `0x8a167df0fb150930101040621e5bf397a425749d1c9d0dcf633deab146ba00c7`
+- cycle proof: [`0x743d033dc6b41ac19c6a5baa6ddc936e827b1aeab4f6af8367ed11a3e0b7b9c4`](https://explorer-studio.genlayer.com/tx/0x743d033dc6b41ac19c6a5baa6ddc936e827b1ae4f6af8367ed11a3e0b7b9c4)
 
-The cycle certificate returned `[1, 2, 3]`, `cycle_count == 1`, and `dependency_count == 3`. `LOWEST_BREAK_COST` deterministically selected commitment `3` (cost `10`) and stored `override_cycle_id == 1` with status `OVERRIDDEN`.
+The cycle certificate returned `[2, 3, 4]`, `cycle_count == 1`, and `dependency_count == 3`. `LOWEST_BREAK_COST` deterministically selected commitment `4` (cost `10`) and stored `override_cycle_id == 1` with status `OVERRIDDEN`.
 
-A separate group `2` was sealed with unrelated declarations. Its negative proof transaction was [`0x5378bcd4bebcb9168c86f79fbca63016bdc8f56a34b1892c9a78c0c26d2f5f60`](https://explorer-studio.genlayer.com/tx/0x5378bcd4bebcb9168c86f79fbca63016bdc8f56a34b1892c9a78c0c26d2f5f60). It finalized with consensus agreement but contract execution failed closed; the group readback remained `cycle_count == 0`.
+A separate group `3` was sealed with unrelated declarations after both named actors approved. Its negative proof transaction was [`0xab0402b837952a7f6b615f8cdadcf8263ae97569085c86be0d05c2d94ac4e954`](https://explorer-studio.genlayer.com/tx/0xab0402b837952a7f6b615f8cdadcf8263ae97569085c86be0d05c2d94ac4e954). It finalized with consensus agreement but contract execution failed closed; the group readback remained `cycle_count == 0`.
 
-Direct Mode: **22/22 passed** (stable GenVM `v0.2.12`; repository CLI `0.39.1`).
+Direct Mode: **24/24 passed** (stable GenVM `v0.2.12`; repository CLI `0.39.1`).

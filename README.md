@@ -108,7 +108,7 @@ break_cost:   20
 
 ### 3. Seal the group
 
-Only the group creator can seal. After sealing:
+Only the group creator can add commitment records and seal. Each named actor must separately call `approve_commitment(commitment_id)` before sealing. That approval accepts the exact stored actor, obligation, prerequisite, provides text, breakability and break cost. After sealing:
 
 - no new commitments can be added;
 - commitments cannot be cancelled;
@@ -289,7 +289,7 @@ pytest tests/direct -v -s
 
 The Direct Mode suite explicitly pins the stable GenVM `v0.2.12` artefact while the repository CLI remains exactly `0.39.1`. This avoids the current upstream testing-suite auto-detection path that resolves to a v0.3 RC with a renamed universal runner artefact.
 
-Verified locally: **22/22 Direct Mode tests passed**. The suite includes creator-controlled open-group admission and duplicate-cycle certificate rejection.
+Verified locally: **24/24 Direct Mode tests passed**. The suite includes creator-controlled open-group admission, actor approval, and duplicate-cycle certificate rejection.
 
 The direct suite covers:
 
@@ -380,6 +380,6 @@ Verified in GitHub Actions:
 
 - repository-local GenLayer CLI **0.39.1** installs successfully;
 - toolchain/network guard passes for stable Studionet **61999**;
-- **22/22 Direct Mode tests pass** using the stable GenVM `v0.2.12` artefact.
+- **24/24 Direct Mode tests pass** using the stable GenVM `v0.2.12` artefact.
 
 Final live Studionet evidence is recorded in `REVIEW_EVIDENCE.md` and `DEPLOYMENT.md`.

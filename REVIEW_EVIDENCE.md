@@ -2,27 +2,68 @@
 
 ## Source and toolchain
 
-- Final corrected source commit: `8ec1283c5f67f0d1742906d1ad7caa4754c9a3a4`.
-- Deployed source bytes: `33491` (Windows deployment payload with CRLF line endings).
-- Deployed source SHA-256: `f52ec1b6c2201f3a5f3974cd650991b14f55984b9eedcbfd29a2bb38ad1c028d`.
+- Previous hardening source commit: `8ec12832e7905ffceb55d8ebb2e40564765dfc25`.
+- Final actor-approval source commit: `a1679cf4a59d74c463d0bc1810933a45f321639d`.
+- Earlier superseded deployment payload: `33491` bytes (Windows CRLF payload), SHA-256 `f52ec1b6c2201f3a5f3974cd650991b14f55984b9eedcbfd29a2bb38ad1c028d`.
 - CLI: GenLayer `0.39.1`.
 - Network guard: stable Studionet, chain `61999`, RPC `https://studio.genlayer.com/api`.
 - Pinned runner: `py-genlayer:1jb45aa8ynh2a9c9xn3b7qqh8sm5q93hwfp7jqmwsfhh8jpz09h6`.
-- Direct Mode: `22/22 passed` under WSL with `genlayer-test 0.29.2` and stable GenVM `v0.2.12`.
+- Direct Mode: `24/24 passed` under WSL with `genlayer-test 0.29.2` and stable GenVM `v0.2.12`.
 - Preflight: `KNOT offline preflight: OK`.
 - Compileall: passed.
 - `runtime_chain_id()` on the final deployment: `61999`.
 
-## Final deployment
+## Superseded deployment
 
 - Address: `0x2cd385371fA71242cBE1c820e54d0899F9B48431`.
 - Transaction: `0x487d44204d31a0995f8693c5c99151518e484bc1c830c1f3b97e7b23419af375`.
 - Result: `FINALIZED / ACCEPTED / MAJORITY_AGREE / SUCCESS`.
-- Explorer: https://explorer-studio.genlayer.com/tx/0x487d44204d31a0995f8693c5c99151518e484bc1c830c1f3b97e7b23419af375
+- Reason superseded: actor approval was not yet part of the commitment lifecycle.
+
+## Final actor-consent deployment
+
+- Address: `0x0eF825bde4e7bB8D90F5Cc2aD52E80945E9a4768`.
+- Transaction: `0x95182bb4844e9adc9af3f88697019a54c98d51351cdb47845c3bbb064f53dd38`.
+- Source commit: `a1679cf4a59d74c463d0bc1810933a45f321639d`.
+- Source bytes: `35019`.
+- Source SHA-256: `145b1f682af7baf075e31df85824ba3747a79d4998c14b0bd9ba807008a27a99`.
+- Result: `FINALIZED / ACCEPTED / MAJORITY_AGREE / SUCCESS`.
+- Runtime chain readback: `61999`.
+- Explorer: https://explorer-studio.genlayer.com/tx/0x95182bb4844e9adc9af3f88697019a54c98d51351cdb47845c3bbb064f53dd38
 
 ## Final live cycle and deterministic recovery
 
-Final deployment address used for every transaction below: `0x2cd385371fA71242cBE1c820e54d0899F9B48431`.
+The actor-consent lifecycle below is the final canonical evidence and uses `0x0eF825bde4e7bB8D90F5Cc2aD52E80945E9a4768`.
+
+| Action | Transaction | Observed result |
+|---|---|---|
+| Create group 2 | `0x833336b11be721f70ab7b9ffd164cac9d93ae47685aa22b21130dceb80880115` | `ACCEPTED / MAJORITY_AGREE / SUCCESS` |
+| Add commitment 2 (actor party_a) | `0xd59d11ba94af2fcd45846a3bee1ee94f61f476ed45c8c7aec88538266c6c230b` | `ACCEPTED / MAJORITY_AGREE / SUCCESS` |
+| Add commitment 3 (actor party_b) | `0x4b902cc17373b7c508d300738d4a528669cd864c38d5a893c514b833e742d715` | `ACCEPTED / MAJORITY_AGREE / SUCCESS` |
+| Add commitment 4 (actor deployer) | `0xe32f546048b727f9a3ee0e51558c322157ba3d1cef5ca3a7f422459d13c79702` | `ACCEPTED / MAJORITY_AGREE / SUCCESS` |
+| Actor party_a approves 2 | `0x2e913cebdf6f463ffadacc3d70caa156ab592f25c01d77b1514ede12a905cefe` | `ACCEPTED / MAJORITY_AGREE / SUCCESS` |
+| Actor party_b approves 3 | `0x2e325e1f8ad0057e86f56369ca4be1fe801363aff7e701ef10f527a21afda46e` | `ACCEPTED / MAJORITY_AGREE / SUCCESS` |
+| Actor deployer approves 4 | `0x15ef333b7b2bb94316be03419b0b9d430ac94e0ac7469aea0ed34f2392d04f21` | `ACCEPTED / MAJORITY_AGREE / SUCCESS` |
+| Seal group 2 | `0x8a167df0fb150930101040621e5bf397a425749d1c9d0dcf633deab146ba00c7` | `ACCEPTED / MAJORITY_AGREE / SUCCESS` |
+| Prove cycle `[2,3,4]` | `0x743d033dc6b41ac19c6a5baa6ddc936e827b1aeab4f6af8367ed11a3e0b7b9c4` | `ACCEPTED / MAJORITY_AGREE / SUCCESS` |
+
+The final readbacks were `cycle_count == 1`, `dependency_count == 3`, cycle IDs `[2,3,4]`, recovery commitment `4`, and commitment 4 `actor_approved == true`, `break_cost == 10`, `status == OVERRIDDEN`, `override_cycle_id == 1`.
+
+## Final live fail-closed non-cycle proof
+
+Group `3` was created with two actor-approved commitments whose declarations do not form a closed cycle. The final proof attempt was:
+
+- Create group: `0x742d902dce30689f53ab9f5173f319a7ebf9845012a45edaf4f0f9432b4065d8`
+- Add commitments 5 and 6: `0x1c1e4e3f394b68fc99c846203aaab83c2f4a2442c9556700fe178987e85d22c8`, `0x9014f427e58772e2a412331568b5cbc1733013e742df36dfe3d70910f482d87f`
+- Actor approvals 5 and 6: `0x3e2b75a655690b67c1cb10ecea4314544b37e5615f0f0db9c27414699694aed9`, `0x2e71438aa197db34e82fa648809c6e7ae551f8cd34d2f3f5a6b49388b3aa9885`
+- Seal: `0xeecb5d1bd6eae3b35182ab9f8d5c0088d6927424569655d93d866531d995a59b`
+- Attempted non-cycle proof `[5,6]`: `0xab0402b837952a7f6b615f8cdadcf8263ae97569085c86be0d05c2d94ac4e954`
+
+The attempted proof finalized with consensus agreement but contract execution failed closed. Final `get_group(3)` readback showed `cycle_count == 0` and `dependency_count == 0`; no certificate or override was created.
+
+## Superseded pre-approval cycle evidence
+
+The following earlier cycle used the prior deployment and remains historical evidence only.
 
 | Action | Transaction | Observed result |
 |---|---|---|
@@ -54,5 +95,7 @@ It finalized with consensus agreement but contract execution failed closed. The 
 
 - `test_non_creator_cannot_consume_open_group_slot`: an unrelated wallet cannot consume an open group's bounded slot; the creator can register an explicit actor.
 - `test_duplicate_cycle_certificate_is_rejected`: a second submission of the same cycle in a rotated order is rejected and `cycle_count` remains `1`.
+- `test_unaccepted_commitment_cannot_be_sealed`: the creator cannot seal while any commitment remains unaccepted.
+- `test_only_named_actor_can_accept_recovery_terms`: another wallet cannot approve or attribute the named actor's recovery terms.
 
 The source remains a standalone Intelligent Contract primitive with no frontend.
