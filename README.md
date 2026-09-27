@@ -287,6 +287,10 @@ pip install -r requirements-test.txt
 pytest tests/direct -v -s
 ```
 
+The Direct Mode suite explicitly pins the stable GenVM `v0.2.12` artefact while the repository CLI remains exactly `0.39.1`. This avoids the current upstream testing-suite auto-detection path that resolves to a v0.3 RC with a renamed universal runner artefact.
+
+Verified in GitHub Actions: **20/20 Direct Mode tests passed**.
+
 The direct suite covers:
 
 - group lifecycle;
@@ -372,10 +376,14 @@ Implemented in-repo:
 - architecture/threat-model documentation;
 - reviewer submission draft.
 
-Still requires a machine with package-network access and a funded/usable Studionet account to:
+Verified in GitHub Actions:
 
-- install the pinned CLI and test dependencies;
-- run Direct Mode in the actual GenLayer testing runtime;
+- repository-local GenLayer CLI **0.39.1** installs successfully;
+- toolchain/network guard passes for stable Studionet **61999**;
+- **20/20 Direct Mode tests pass** using the stable GenVM `v0.2.12` artefact.
+
+Still requires a funded/usable Studionet account to:
+
 - execute the live 61999 integration scenario;
 - deploy the final contract;
 - record the address, deployment transaction and finalized lifecycle receipts.
