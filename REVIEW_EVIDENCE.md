@@ -2,7 +2,9 @@
 
 ## Source and toolchain
 
-- Final corrected source commit: to be filled after the evidence commit is created.
+- Final corrected source commit: `8ec1283c5f67f0d1742906d1ad7caa4754c9a3a4`.
+- Deployed source bytes: `33491` (Windows deployment payload with CRLF line endings).
+- Deployed source SHA-256: `f52ec1b6c2201f3a5f3974cd650991b14f55984b9eedcbfd29a2bb38ad1c028d`.
 - CLI: GenLayer `0.39.1`.
 - Network guard: stable Studionet, chain `61999`, RPC `https://studio.genlayer.com/api`.
 - Pinned runner: `py-genlayer:1jb45aa8ynh2a9c9xn3b7qqh8sm5q93hwfp7jqmwsfhh8jpz09h6`.

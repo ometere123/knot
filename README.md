@@ -380,6 +380,6 @@ Verified in GitHub Actions:
 
 - repository-local GenLayer CLI **0.39.1** installs successfully;
 - toolchain/network guard passes for stable Studionet **61999**;
-- **20/20 Direct Mode tests pass** using the stable GenVM `v0.2.12` artefact.
+- **22/22 Direct Mode tests pass** using the stable GenVM `v0.2.12` artefact.
 
 Final live Studionet evidence is recorded in `REVIEW_EVIDENCE.md` and `DEPLOYMENT.md`.
