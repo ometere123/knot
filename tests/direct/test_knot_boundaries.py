@@ -38,9 +38,12 @@ def test_non_actor_cannot_mark_satisfied(
     a = contract.add_commitment(
         group_id, direct_alice, "A", "Need B", "A done", True, 1
     )
-    contract.add_commitment(
+    b = contract.add_commitment(
         group_id, direct_bob, "B", "Need A", "B done", True, 2
     )
+    contract.approve_commitment(a)
+    with direct_vm.prank(direct_bob):
+        contract.approve_commitment(b)
     contract.seal_group(group_id)
 
     with direct_vm.prank(direct_bob):

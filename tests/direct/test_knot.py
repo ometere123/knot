@@ -46,6 +46,12 @@ def build_three_cycle(direct_vm, direct_deploy, alice, bob, carol, recovery_mode
             10,
         )
     with direct_vm.prank(alice):
+        contract.approve_commitment(a)
+    with direct_vm.prank(bob):
+        contract.approve_commitment(b)
+    with direct_vm.prank(carol):
+        contract.approve_commitment(c)
+    with direct_vm.prank(alice):
         contract.seal_group(group_id)
     return contract, group_id, a, b, c
 
@@ -65,6 +71,8 @@ def test_create_group_and_add_commitments(direct_vm, direct_deploy, direct_alice
             True,
             7,
         )
+    with direct_vm.prank(direct_bob):
+        contract.approve_commitment(commitment_id)
 
     group = contract.get_group(group_id)
     commitment = contract.get_commitment(commitment_id)
@@ -97,8 +105,11 @@ def test_only_creator_can_seal(direct_vm, direct_deploy, direct_alice, direct_bo
     direct_vm.sender = direct_alice
     contract = direct_deploy(CONTRACT, sdk_version="v0.2.12")
     group_id = contract.create_group("Seal auth", 1)
-    contract.add_commitment(group_id, direct_alice, "A", "Need B", "A done", True, 1)
-    contract.add_commitment(group_id, direct_bob, "B", "Need A", "B done", True, 2)
+    a = contract.add_commitment(group_id, direct_alice, "A", "Need B", "A done", True, 1)
+    b = contract.add_commitment(group_id, direct_bob, "B", "Need A", "B done", True, 2)
+    contract.approve_commitment(a)
+    with direct_vm.prank(direct_bob):
+        contract.approve_commitment(b)
     with direct_vm.prank(direct_bob):
         with direct_vm.expect_revert("only group creator"):
             contract.seal_group(group_id)
@@ -108,7 +119,8 @@ def test_seal_requires_two_active_commitments(direct_vm, direct_deploy, direct_a
     direct_vm.sender = direct_alice
     contract = direct_deploy(CONTRACT, sdk_version="v0.2.12")
     group_id = contract.create_group("Too small", 1)
-    contract.add_commitment(group_id, direct_alice, "A", "Need B", "A done", True, 1)
+    a = contract.add_commitment(group_id, direct_alice, "A", "Need B", "A done", True, 1)
+    contract.approve_commitment(a)
     with direct_vm.expect_revert("at least 2"):
         contract.seal_group(group_id)
 
@@ -117,8 +129,11 @@ def test_cannot_add_after_seal(direct_vm, direct_deploy, direct_alice, direct_bo
     direct_vm.sender = direct_alice
     contract = direct_deploy(CONTRACT, sdk_version="v0.2.12")
     group_id = contract.create_group("Frozen membership", 1)
-    contract.add_commitment(group_id, direct_alice, "A", "Need B", "A done", True, 1)
-    contract.add_commitment(group_id, direct_bob, "B", "Need A", "B done", True, 2)
+    a = contract.add_commitment(group_id, direct_alice, "A", "Need B", "A done", True, 1)
+    b = contract.add_commitment(group_id, direct_bob, "B", "Need A", "B done", True, 2)
+    contract.approve_commitment(a)
+    with direct_vm.prank(direct_bob):
+        contract.approve_commitment(b)
     contract.seal_group(group_id)
 
     with direct_vm.expect_revert("sealed"):
@@ -137,6 +152,53 @@ def test_actor_can_cancel_only_before_seal(direct_vm, direct_deploy, direct_alic
     with direct_vm.prank(direct_bob):
         contract.cancel_commitment(commitment_id)
     assert contract.get_commitment(commitment_id)["status"] == 2
+
+
+def test_unaccepted_commitment_cannot_be_sealed(
+    direct_vm, direct_deploy, direct_alice, direct_bob, direct_charlie
+):
+    direct_vm.sender = direct_alice
+    contract = direct_deploy(CONTRACT, sdk_version="v0.2.12")
+    group_id = contract.create_group("Approval gate", 1)
+    a = contract.add_commitment(group_id, direct_bob, "A", "Need B", "A done", True, 30)
+    b = contract.add_commitment(group_id, direct_charlie, "B", "Need A", "B done", True, 20)
+
+    with direct_vm.prank(direct_bob):
+        contract.approve_commitment(a)
+    with direct_vm.expect_revert("every commitment requires actor approval"):
+        contract.seal_group(group_id)
+
+    with direct_vm.prank(direct_charlie):
+        contract.approve_commitment(b)
+    contract.seal_group(group_id)
+    assert contract.get_group(group_id)["status"] == 1
+
+
+def test_only_named_actor_can_accept_recovery_terms(
+    direct_vm, direct_deploy, direct_alice, direct_bob
+):
+    direct_vm.sender = direct_alice
+    contract = direct_deploy(CONTRACT, sdk_version="v0.2.12")
+    group_id = contract.create_group("Named actor approval", 1)
+    commitment_id = contract.add_commitment(
+        group_id,
+        direct_bob,
+        "B may be overridden.",
+        "A prerequisite.",
+        "B output.",
+        True,
+        77,
+    )
+
+    with direct_vm.expect_revert("only the named commitment actor may approve"):
+        contract.approve_commitment(commitment_id)
+
+    with direct_vm.prank(direct_bob):
+        contract.approve_commitment(commitment_id)
+    commitment = contract.get_commitment(commitment_id)
+    assert commitment["actor_approved"] is True
+    assert commitment["breakable"] is True
+    assert commitment["break_cost"] == 77
 
 
 def test_valid_cycle_is_certified_and_lowest_cost_override_breaks_it(

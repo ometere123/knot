@@ -74,6 +74,8 @@ class Commitment:
     created_at: str
     resolved_at: str
     override_cycle_id: u256
+    actor_approved: bool
+    approved_at: str
 
 
 @allow_storage
@@ -119,6 +121,7 @@ class IKnot:
             breakable: bool,
             break_cost: u256,
         ) -> u256: ...
+        def approve_commitment(self, commitment_id: u256) -> None: ...
         def seal_group(self, group_id: u256) -> None: ...
         def prove_dependency(self, waiter_id: u256, provider_id: u256) -> u256: ...
         def prove_deadlock(self, group_id: u256, cycle_ids: DynArray[u256]) -> u256: ...
@@ -132,6 +135,10 @@ class GroupCreated(gl.Event):
 
 class CommitmentAdded(gl.Event):
     def __init__(self, commitment_id: u256, group_id: u256, actor: Address, /, **blob): ...
+
+
+class CommitmentApproved(gl.Event):
+    def __init__(self, commitment_id: u256, actor: Address, /, **blob): ...
 
 
 class GroupSealed(gl.Event):
@@ -579,6 +586,8 @@ class Knot(gl.Contract):
         commitment.created_at = current_datetime()
         commitment.resolved_at = ""
         commitment.override_cycle_id = u256(0)
+        commitment.actor_approved = False
+        commitment.approved_at = ""
 
         group.commitment_ids.append(commitment_id)
 
@@ -590,6 +599,25 @@ class Knot(gl.Contract):
             break_cost=cost,
         ).emit()
         return commitment_id
+
+    @gl.public.write
+    def approve_commitment(self, commitment_id: u256) -> None:
+        commitment = self._require_commitment(commitment_id)
+        group = self._require_group(commitment.group_id)
+        if int(group.status) != GROUP_OPEN:
+            raise gl.vm.UserError(f"{ERR_STATE}: group is sealed")
+        if commitment.actor != gl.message.sender_address:
+            raise gl.vm.UserError(
+                f"{ERR_AUTH}: only the named commitment actor may approve"
+            )
+        if int(commitment.status) != COMMITMENT_ACTIVE:
+            raise gl.vm.UserError(f"{ERR_STATE}: commitment is already terminal")
+        if bool(commitment.actor_approved):
+            raise gl.vm.UserError(f"{ERR_STATE}: commitment is already approved")
+
+        commitment.actor_approved = True
+        commitment.approved_at = current_datetime()
+        CommitmentApproved(commitment_id, commitment.actor).emit()
 
     @gl.public.write
     def cancel_commitment(self, commitment_id: u256) -> None:
@@ -617,6 +645,10 @@ class Knot(gl.Contract):
         active_count = 0
         for commitment_id in group.commitment_ids:
             commitment = self._require_commitment(commitment_id)
+            if not bool(commitment.actor_approved):
+                raise gl.vm.UserError(
+                    f"{ERR_AUTH}: every commitment requires actor approval before sealing"
+                )
             if int(commitment.status) == COMMITMENT_ACTIVE:
                 active_count += 1
         if active_count < MIN_GROUP_COMMITMENTS:
@@ -826,6 +858,8 @@ class Knot(gl.Contract):
             "resolved_at": str(commitment.resolved_at),
             "override_cycle_id": int(commitment.override_cycle_id),
             "override_granted": int(commitment.status) == COMMITMENT_OVERRIDDEN,
+            "actor_approved": bool(commitment.actor_approved),
+            "approved_at": str(commitment.approved_at),
         }
 
     @gl.public.view

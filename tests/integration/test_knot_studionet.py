@@ -39,6 +39,8 @@ def test_full_deadlock_and_recovery_lifecycle():
         ]
     ).transact(**TX_KW)
     assert_success(add_a)
+    approved_a = contract.approve_commitment([1]).transact(**TX_KW)
+    assert_success(approved_a)
 
     add_b = contract.add_commitment(
         [
@@ -52,6 +54,8 @@ def test_full_deadlock_and_recovery_lifecycle():
         ]
     ).transact(**TX_KW)
     assert_success(add_b)
+    approved_b = contract.approve_commitment([2]).transact(**TX_KW)
+    assert_success(approved_b)
 
     add_c = contract.add_commitment(
         [
@@ -65,6 +69,8 @@ def test_full_deadlock_and_recovery_lifecycle():
         ]
     ).transact(**TX_KW)
     assert_success(add_c)
+    approved_c = contract.approve_commitment([3]).transact(**TX_KW)
+    assert_success(approved_c)
 
     sealed = contract.seal_group([1]).transact(**TX_KW)
     assert_success(sealed)
