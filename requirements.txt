@@ -1,0 +1,2 @@
+# KNOT has no host-side runtime dependency.
+# The Intelligent Contract pins py-genlayer in contracts/knot.py.
