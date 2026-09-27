@@ -12,7 +12,7 @@ def verdicts(*items):
 
 def build_three_cycle(direct_vm, direct_deploy, alice, bob, carol, recovery_mode=1):
     direct_vm.sender = alice
-    contract = direct_deploy(CONTRACT)
+    contract = direct_deploy(CONTRACT, sdk_version="v0.2.12")
     group_id = contract.create_group("Three-party delivery loop", recovery_mode)
 
     with direct_vm.prank(alice):
@@ -49,7 +49,7 @@ def build_three_cycle(direct_vm, direct_deploy, alice, bob, carol, recovery_mode
 
 def test_create_group_and_add_commitments(direct_vm, direct_deploy, direct_alice, direct_bob):
     direct_vm.sender = direct_alice
-    contract = direct_deploy(CONTRACT)
+    contract = direct_deploy(CONTRACT, sdk_version="v0.2.12")
     group_id = contract.create_group("Independent commitments", 1)
 
     with direct_vm.prank(direct_bob):
@@ -74,7 +74,7 @@ def test_create_group_and_add_commitments(direct_vm, direct_deploy, direct_alice
 
 def test_non_breakable_requires_zero_cost(direct_vm, direct_deploy, direct_alice):
     direct_vm.sender = direct_alice
-    contract = direct_deploy(CONTRACT)
+    contract = direct_deploy(CONTRACT, sdk_version="v0.2.12")
     group_id = contract.create_group("Costs", 1)
 
     with direct_vm.expect_revert("non-breakable"):
@@ -90,7 +90,7 @@ def test_non_breakable_requires_zero_cost(direct_vm, direct_deploy, direct_alice
 
 def test_only_creator_can_seal(direct_vm, direct_deploy, direct_alice, direct_bob):
     direct_vm.sender = direct_alice
-    contract = direct_deploy(CONTRACT)
+    contract = direct_deploy(CONTRACT, sdk_version="v0.2.12")
     group_id = contract.create_group("Seal auth", 1)
     contract.add_commitment(group_id, "A", "Need B", "A done", True, 1)
     with direct_vm.prank(direct_bob):
@@ -101,7 +101,7 @@ def test_only_creator_can_seal(direct_vm, direct_deploy, direct_alice, direct_bo
 
 def test_seal_requires_two_active_commitments(direct_vm, direct_deploy, direct_alice):
     direct_vm.sender = direct_alice
-    contract = direct_deploy(CONTRACT)
+    contract = direct_deploy(CONTRACT, sdk_version="v0.2.12")
     group_id = contract.create_group("Too small", 1)
     contract.add_commitment(group_id, "A", "Need B", "A done", True, 1)
     with direct_vm.expect_revert("at least 2"):
@@ -110,7 +110,7 @@ def test_seal_requires_two_active_commitments(direct_vm, direct_deploy, direct_a
 
 def test_cannot_add_after_seal(direct_vm, direct_deploy, direct_alice, direct_bob):
     direct_vm.sender = direct_alice
-    contract = direct_deploy(CONTRACT)
+    contract = direct_deploy(CONTRACT, sdk_version="v0.2.12")
     group_id = contract.create_group("Frozen membership", 1)
     contract.add_commitment(group_id, "A", "Need B", "A done", True, 1)
     with direct_vm.prank(direct_bob):
@@ -123,7 +123,7 @@ def test_cannot_add_after_seal(direct_vm, direct_deploy, direct_alice, direct_bo
 
 def test_actor_can_cancel_only_before_seal(direct_vm, direct_deploy, direct_alice, direct_bob):
     direct_vm.sender = direct_alice
-    contract = direct_deploy(CONTRACT)
+    contract = direct_deploy(CONTRACT, sdk_version="v0.2.12")
     group_id = contract.create_group("Cancellation", 1)
     with direct_vm.prank(direct_bob):
         commitment_id = contract.add_commitment(
