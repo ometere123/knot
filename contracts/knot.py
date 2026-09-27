@@ -296,3 +296,153 @@ class Knot(gl.Contract):
     # ------------------------------------------------------------------
     # Internal accessors
     # ------------------------------------------------------------------
+    def _require_group(self, group_id: u256) -> Group:
+        group = self.groups.get(group_id)
+        if group is None:
+            raise gl.vm.UserError(f"{ERR_EXPECTED}: unknown group {group_id}")
+        return group
+
+    def _require_commitment(self, commitment_id: u256) -> Commitment:
+        commitment = self.commitments.get(commitment_id)
+        if commitment is None:
+            raise gl.vm.UserError(
+                f"{ERR_EXPECTED}: unknown commitment {commitment_id}"
+            )
+        return commitment
+
+    def _require_cycle(self, cycle_id: u256) -> CycleCertificate:
+        cycle = self.cycles.get(cycle_id)
+        if cycle is None:
+            raise gl.vm.UserError(f"{ERR_EXPECTED}: unknown cycle {cycle_id}")
+        return cycle
+
+    def _require_dependency(self, dependency_id: u256) -> DependencyReceipt:
+        dependency = self.dependencies.get(dependency_id)
+        if dependency is None:
+            raise gl.vm.UserError(
+                f"{ERR_EXPECTED}: unknown dependency {dependency_id}"
+            )
+        return dependency
+
+    def _dependency_key(self, waiter_id: u256, provider_id: u256) -> str:
+        return f"{int(waiter_id)}:{int(provider_id)}"
+
+    def _existing_dependency_id(self, waiter_id: u256, provider_id: u256) -> u256:
+        key = self._dependency_key(waiter_id, provider_id)
+        existing = self.dependency_index.get(key)
+        if existing is None:
+            return u256(0)
+        return existing
+
+    def _copy_cycle_ids(self, raw_ids: DynArray[u256]) -> list[int]:
+        ids = [int(value) for value in raw_ids]
+        if len(ids) < 2 or len(ids) > MAX_CYCLE_SIZE:
+            raise gl.vm.UserError(
+                f"{ERR_EXPECTED}: cycle size must be 2..{MAX_CYCLE_SIZE}"
+            )
+        if has_duplicates(ids):
+            raise gl.vm.UserError(f"{ERR_EXPECTED}: cycle ids must be unique")
+        return ids
+
+    def _edge_payload(self, group_id: u256, waiter_id: u256, provider_id: u256) -> dict:
+        waiter = self._require_commitment(waiter_id)
+        provider = self._require_commitment(provider_id)
+
+        if waiter.group_id != group_id or provider.group_id != group_id:
+            raise gl.vm.UserError(
+                f"{ERR_EXPECTED}: every dependency commitment must belong to the group"
+            )
+        if int(waiter.status) != COMMITMENT_ACTIVE:
+            raise gl.vm.UserError(
+                f"{ERR_STATE}: waiter commitment {waiter_id} is not active"
+            )
+        if int(provider.status) != COMMITMENT_ACTIVE:
+            raise gl.vm.UserError(
+                f"{ERR_STATE}: provider commitment {provider_id} is not active"
+            )
+        if str(waiter.prerequisite) == "":
+            raise gl.vm.UserError(
+                f"{ERR_EXPECTED}: waiter commitment {waiter_id} has no prerequisite"
+            )
+        if str(provider.provides) == "":
+            raise gl.vm.UserError(
+                f"{ERR_EXPECTED}: provider commitment {provider_id} provides nothing"
+            )
+
+        return {
+            "waiter_id": int(waiter_id),
+            "waiter_actor": str(waiter.actor),
+            "waiter_obligation": str(waiter.obligation),
+            "waiter_prerequisite": str(waiter.prerequisite),
+            "provider_id": int(provider_id),
+            "provider_actor": str(provider.actor),
+            "provider_provides": str(provider.provides),
+        }
+
+    def _edge_payloads(self, group_id: u256, ids: list[int]) -> list[dict]:
+        payloads: list[dict] = []
+        count = len(ids)
+        for index in range(count):
+            waiter_id = u256(ids[index])
+            provider_id = u256(ids[(index + 1) % count])
+            payloads.append(self._edge_payload(group_id, waiter_id, provider_id))
+        return payloads
+
+    def _verify_cycle_semantics(self, payloads: list[dict]) -> dict:
+        def leader_fn() -> dict:
+            return judge_dependencies_once(payloads)
+
+        def validator_fn(leader_result) -> bool:
+            if not isinstance(leader_result, gl.vm.Return):
+                return False
+            leader = leader_result.calldata
+            if not isinstance(leader, dict):
+                return False
+            leader_ok = leader.get("ok")
+            if not isinstance(leader_ok, bool):
+                return False
+            try:
+                leader_verdicts = normalise_verdicts(
+                    leader.get("verdicts"), len(payloads)
+                )
+            except Exception:
+                return False
+
+            own = judge_dependencies_once(payloads)
+            own_ok = own.get("ok")
+            if not isinstance(own_ok, bool):
+                return False
+            try:
+                own_verdicts = normalise_verdicts(
+                    own.get("verdicts"), len(payloads)
+                )
+            except Exception:
+                return False
+
+            # Fail closed on inference errors. A deadlock certificate may only
+            # be issued when both proposer and validator independently obtained
+            # a fully parseable verdict vector and agreed edge-by-edge.
+            return leader_ok and own_ok and leader_verdicts == own_verdicts
+
+        return gl.vm.run_nondet_unsafe(leader_fn, validator_fn)
+
+    def _store_dependency(
+        self,
+        group: Group,
+        waiter_id: u256,
+        provider_id: u256,
+        reporter: Address,
+    ) -> u256:
+        existing = self._existing_dependency_id(waiter_id, provider_id)
+        if int(existing) != 0:
+            return existing
+
+        dependency_id = self.next_dependency_id
+        self.next_dependency_id = u256(int(self.next_dependency_id) + 1)
+
+        receipt = self.dependencies.get_or_insert_default(dependency_id)
+        receipt.group_id = self._require_commitment(waiter_id).group_id
+        receipt.waiter_id = waiter_id
+        receipt.provider_id = provider_id
+        receipt.reporter = reporter
+        receipt.created_at = current_datetime()
