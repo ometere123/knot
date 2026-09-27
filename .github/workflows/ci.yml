@@ -1,0 +1,38 @@
+name: KNOT CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  direct:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install local GenLayer CLI 0.39.1
+        run: npm install
+
+      - name: Verify repository-local toolchain and network guard
+        run: |
+          python scripts/repo-preflight.py
+          npm run toolchain:check
+
+      - name: Install Direct Mode test suite
+        run: pip install -r requirements-test.txt
+
+      - name: Run Direct Mode tests
+        run: pytest tests/direct -v -s
