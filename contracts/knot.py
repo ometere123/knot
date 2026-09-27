@@ -446,3 +446,153 @@ class Knot(gl.Contract):
         receipt.provider_id = provider_id
         receipt.reporter = reporter
         receipt.created_at = current_datetime()
+
+        self.dependency_index[self._dependency_key(waiter_id, provider_id)] = dependency_id
+        group.dependency_count = u32(int(group.dependency_count) + 1)
+
+        DependencyProved(
+            dependency_id,
+            receipt.group_id,
+            waiter_id=int(waiter_id),
+            provider_id=int(provider_id),
+        ).emit()
+        return dependency_id
+
+    def _choose_recovery(self, group: Group, ids: list[int]) -> u256:
+        if int(group.recovery_mode) != RECOVERY_LOWEST_BREAK_COST:
+            return u256(0)
+
+        chosen_id = 0
+        chosen_cost = 0
+        for raw_id in ids:
+            commitment = self._require_commitment(u256(raw_id))
+            if not bool(commitment.breakable):
+                continue
+            cost = int(commitment.break_cost)
+            if chosen_id == 0 or cost < chosen_cost or (
+                cost == chosen_cost and raw_id < chosen_id
+            ):
+                chosen_id = raw_id
+                chosen_cost = cost
+
+        return u256(chosen_id)
+
+    # ------------------------------------------------------------------
+    # Writes
+    # ------------------------------------------------------------------
+
+    @gl.public.write
+    def create_group(self, title: str, recovery_mode: u8) -> u256:
+        title = validate_text("title", title, MAX_TITLE_LEN)
+        mode = int(recovery_mode)
+        if mode not in (RECOVERY_CERTIFY_ONLY, RECOVERY_LOWEST_BREAK_COST):
+            raise gl.vm.UserError(f"{ERR_EXPECTED}: unsupported recovery mode")
+
+        group_id = self.next_group_id
+        self.next_group_id = u256(int(self.next_group_id) + 1)
+
+        group = self.groups.get_or_insert_default(group_id)
+        group.creator = gl.message.sender_address
+        group.title = title
+        group.status = u8(GROUP_OPEN)
+        group.recovery_mode = u8(mode)
+        group.created_at = current_datetime()
+        group.sealed_at = ""
+        group.cycle_count = u32(0)
+        group.dependency_count = u32(0)
+
+        GroupCreated(
+            group_id,
+            gl.message.sender_address,
+            recovery_mode=mode,
+            title=title,
+        ).emit()
+        return group_id
+
+    @gl.public.write
+    def add_commitment(
+        self,
+        group_id: u256,
+        obligation: str,
+        prerequisite: str,
+        provides: str,
+        breakable: bool,
+        break_cost: u256,
+    ) -> u256:
+        group = self._require_group(group_id)
+        if int(group.status) != GROUP_OPEN:
+            raise gl.vm.UserError(f"{ERR_STATE}: group is sealed")
+        if len(group.commitment_ids) >= MAX_GROUP_COMMITMENTS:
+            raise gl.vm.UserError(
+                f"{ERR_EXPECTED}: group supports at most {MAX_GROUP_COMMITMENTS} commitments"
+            )
+
+        obligation = validate_text("obligation", obligation, MAX_OBLIGATION_LEN)
+        prerequisite = validate_text(
+            "prerequisite", prerequisite, MAX_PREREQUISITE_LEN, allow_empty=True
+        )
+        provides = validate_text(
+            "provides", provides, MAX_PROVIDES_LEN, allow_empty=True
+        )
+        cost = int(break_cost)
+        if cost < 0 or cost > MAX_BREAK_COST:
+            raise gl.vm.UserError(
+                f"{ERR_EXPECTED}: break_cost must be 0..{MAX_BREAK_COST}"
+            )
+        if not breakable and cost != 0:
+            raise gl.vm.UserError(
+                f"{ERR_EXPECTED}: non-breakable commitment must use break_cost 0"
+            )
+
+        commitment_id = self.next_commitment_id
+        self.next_commitment_id = u256(int(self.next_commitment_id) + 1)
+
+        commitment = self.commitments.get_or_insert_default(commitment_id)
+        commitment.group_id = group_id
+        commitment.actor = gl.message.sender_address
+        commitment.obligation = obligation
+        commitment.prerequisite = prerequisite
+        commitment.provides = provides
+        commitment.breakable = bool(breakable)
+        commitment.break_cost = u256(cost)
+        commitment.status = u8(COMMITMENT_ACTIVE)
+        commitment.created_at = current_datetime()
+        commitment.resolved_at = ""
+        commitment.override_cycle_id = u256(0)
+
+        group.commitment_ids.append(commitment_id)
+
+        CommitmentAdded(
+            commitment_id,
+            group_id,
+            gl.message.sender_address,
+            breakable=bool(breakable),
+            break_cost=cost,
+        ).emit()
+        return commitment_id
+
+    @gl.public.write
+    def cancel_commitment(self, commitment_id: u256) -> None:
+        commitment = self._require_commitment(commitment_id)
+        group = self._require_group(commitment.group_id)
+        if int(group.status) != GROUP_OPEN:
+            raise gl.vm.UserError(f"{ERR_STATE}: sealed commitments cannot be cancelled")
+        if commitment.actor != gl.message.sender_address:
+            raise gl.vm.UserError(f"{ERR_AUTH}: only the commitment actor may cancel")
+        if int(commitment.status) != COMMITMENT_ACTIVE:
+            raise gl.vm.UserError(f"{ERR_STATE}: commitment is already terminal")
+
+        commitment.status = u8(COMMITMENT_CANCELLED)
+        commitment.resolved_at = current_datetime()
+        CommitmentResolved(commitment_id, u8(COMMITMENT_CANCELLED)).emit()
+
+    @gl.public.write
+    def seal_group(self, group_id: u256) -> None:
+        group = self._require_group(group_id)
+        if group.creator != gl.message.sender_address:
+            raise gl.vm.UserError(f"{ERR_AUTH}: only group creator may seal")
+        if int(group.status) != GROUP_OPEN:
+            raise gl.vm.UserError(f"{ERR_STATE}: group already sealed")
+
+        active_count = 0
+        for commitment_id in group.commitment_ids:
