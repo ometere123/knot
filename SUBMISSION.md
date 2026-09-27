@@ -98,19 +98,17 @@ The repository intentionally does not target Studio-dev / 61997.
 
 The corrected source was deployed to stable Studionet (chain 61999):
 
-- Contract: `0x0eF825bde4e7bB8D90F5Cc2aD52E80945E9a4768`
-- Deployment transaction: [`0x95182bb4844e9adc9af3f88697019a54c98d51351cdb47845c3bbb064f53dd38`](https://explorer-studio.genlayer.com/tx/0x95182bb4844e9adc9af3f88697019a54c98d51351cdb47845c3bbb064f53dd38)
+- Contract: `0xd0cd05f5277Ff272D38651D7fd86AF931d10E0ec`
+- Deployment transaction: [`0x82a71dd9c47f2bc4c9a56afb008f35185b8bfb6182f631b67554c96674586d2a`](https://explorer-studio.genlayer.com/tx/0x82a71dd9c47f2bc4c9a56afb008f35185b8bfb6182f631b67554c96674586d2a)
 - Deployment result: `FINALIZED / ACCEPTED / MAJORITY_AGREE / SUCCESS`
-- Source commit at deployment: `a1679cf4a59d74c463d0bc1810933a45f321639d`
+- Source commit at deployment: `c107c559c55d4f3c877e896c7beff52415f2f18b`
 - `runtime_chain_id()`: `61999`
 
-The final actor-consent live cycle used group `2` and commitments `[2, 3, 4]`:
+The final declined-proposal live cycle used group `1` with commitments `[1, 2, 3, 4]`; commitment `1` was cancelled by its named actor, while `[2, 3, 4]` formed the active cycle:
 
-- create group: `0x833336b11be721f70ab7b9ffd164cac9d93ae47685aa22b21130dceb80880115`
-- add commitments: `0xd59d11ba94af2fcd45846a3bee1ee94f61f476ed45c8c7aec88538266c6c230b`, `0x4b902cc17373b7c508d300738d4a528669cd864c38d5a893c514b833e742d715`, `0xe32f546048b727f9a3ee0e51558c322157ba3d1cef5ca3a7f422459d13c79702`
-- actor approvals: `0x2e913cebdf6f463ffadacc3d70caa156ab592f25c01d77b1514ede12a905cefe`, `0x2e325e1f8ad0057e86f56369ca4be1fe801363aff7e701ef10f527a21afda46e`, `0x15ef333b7b2bb94316be03419b0b9d430ac94e0ac7469aea0ed34f2392d04f21`
-- seal: `0x8a167df0fb150930101040621e5bf397a425749d1c9d0dcf633deab146ba00c7`
-- cycle proof: [`0x743d033dc6b41ac19c6a5baa6ddc936e827b1aeab4f6af8367ed11a3e0b7b9c4`](https://explorer-studio.genlayer.com/tx/0x743d033dc6b41ac19c6a5baa6ddc936e827b1ae4f6af8367ed11a3e0b7b9c4)
+- create group: `0xc847b13846be15bce81c0e75af16349b1ce2c4a9d2b948dbc839d6d9bc15a8af`
+- seal after cancellation: `0x922054c4603e854ce32fdb39b7c46d4fdc338a7f213d75abf3a0e92a9b84041d`
+- correct cycle proof: [`0xf1fe357ad27dc53d8a28373d2850f91f46f963d601b8a6ebd1a2c44fba784767`](https://explorer-studio.genlayer.com/tx/0xf1fe357ad27dc53d8a28373d2850f91f46f963d601b8a6ebd1a2c44fba784767)
 
 The cycle certificate returned `[2, 3, 4]`, `cycle_count == 1`, and `dependency_count == 3`. `LOWEST_BREAK_COST` deterministically selected commitment `4` (cost `10`) and stored `override_cycle_id == 1` with status `OVERRIDDEN`.
 

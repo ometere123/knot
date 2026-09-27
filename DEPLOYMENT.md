@@ -114,18 +114,18 @@ The final corrected deployment is:
 | Network | Studionet |
 | Chain ID | 61999 |
 | RPC | `https://studio.genlayer.com/api` |
-| Contract | `0x0eF825bde4e7bB8D90F5Cc2aD52E80945E9a4768` |
-| Deployment transaction | `0x95182bb4844e9adc9af3f88697019a54c98d51351cdb47845c3bbb064f53dd38` |
-| Source commit | `a1679cf4a59d74c463d0bc1810933a45f321639d` |
-| Source SHA-256 | `145b1f682af7baf075e31df85824ba3747a79d4998c14b0bd9ba807008a27a99` |
-| Source bytes | `35019` |
+| Contract | `0xd0cd05f5277Ff272D38651D7fd86AF931d10E0ec` |
+| Deployment transaction | `0x82a71dd9c47f2bc4c9a56afb008f35185b8bfb6182f631b67554c96674586d2a` |
+| Source commit | `c107c559c55d4f3c877e896c7beff52415f2f18b` |
+| Source SHA-256 | `79c474ece86a3980f7b2535cb7d6a7886a4258f07beeff81105fde4b3ffb0e47` |
+| Source bytes | `35122` |
 | Deployment result | `FINALIZED / ACCEPTED / MAJORITY_AGREE / SUCCESS` |
 | Runtime chain readback | `61999` |
 | Direct Mode | `25/25 passed` |
 
-Explorer: [final KNOT deployment](https://explorer-studio.genlayer.com/tx/0x95182bb4844e9adc9af3f88697019a54c98d51351cdb47845c3bbb064f53dd38)
+Explorer: [final KNOT deployment](https://explorer-studio.genlayer.com/tx/0x82a71dd9c47f2bc4c9a56afb008f35185b8bfb6182f631b67554c96674586d2a)
 
-The deployed source includes the three deployed hardening fixes documented in `REVIEW_EVIDENCE.md`. The current repository additionally treats cancelled proposals as excluded membership: only commitments that remain `ACTIVE` require approval at seal time. This latest lifecycle fix is not part of the already-deployed source and requires a future deployment before it can be presented as live evidence.
+The deployed source includes the four narrow hardening fixes documented in `REVIEW_EVIDENCE.md`: creator-controlled slot admission, explicit actor approval, duplicate-cycle prevention, and exclusion of cancelled proposals from seal-time approval requirements.
 
 The final live evidence transaction table and state readbacks are maintained in `REVIEW_EVIDENCE.md`.
 

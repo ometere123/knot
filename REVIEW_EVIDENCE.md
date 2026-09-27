@@ -4,7 +4,8 @@
 
 - Previous hardening source commit: `8ec12832e7905ffceb55d8ebb2e40564765dfc25`.
 - Final actor-approval source commit: `a1679cf4a59d74c463d0bc1810933a45f321639d`.
-- Earlier superseded deployment payload: `33491` bytes (Windows CRLF payload), SHA-256 `f52ec1b6c2201f3a5f3974cd650991b14f55984b9eedcbfd29a2bb38ad1c028d`.
+- Current deployed source bytes: `35122` (Windows deployment payload with CRLF line endings).
+- Current deployed source SHA-256: `79c474ece86a3980f7b2535cb7d6a7886a4258f07beeff81105fde4b3ffb0e47`.
 - CLI: GenLayer `0.39.1`.
 - Network guard: stable Studionet, chain `61999`, RPC `https://studio.genlayer.com/api`.
 - Pinned runner: `py-genlayer:1jb45aa8ynh2a9c9xn3b7qqh8sm5q93hwfp7jqmwsfhh8jpz09h6`.
@@ -20,7 +21,7 @@
 - Result: `FINALIZED / ACCEPTED / MAJORITY_AGREE / SUCCESS`.
 - Reason superseded: actor approval was not yet part of the commitment lifecycle.
 
-## Final actor-consent deployment
+## Final actor-consent deployment (superseded)
 
 - Address: `0x0eF825bde4e7bB8D90F5Cc2aD52E80945E9a4768`.
 - Transaction: `0x95182bb4844e9adc9af3f88697019a54c98d51351cdb47845c3bbb064f53dd38`.
@@ -31,9 +32,33 @@
 - Runtime chain readback: `61999`.
 - Explorer: https://explorer-studio.genlayer.com/tx/0x95182bb4844e9adc9af3f88697019a54c98d51351cdb47845c3bbb064f53dd38
 
-## Final live cycle and deterministic recovery
+## Latest canonical deployment with declined-proposal handling
 
-The actor-consent lifecycle below is the final canonical evidence and uses `0x0eF825bde4e7bB8D90F5Cc2aD52E80945E9a4768`.
+- Address: `0xd0cd05f5277Ff272D38651D7fd86AF931d10E0ec`.
+- Transaction: `0x82a71dd9c47f2bc4c9a56afb008f35185b8bfb6182f631b67554c96674586d2a`.
+- Source commit: `c107c559c55d4f3c877e896c7beff52415f2f18b`.
+- Source bytes: `35122`.
+- Source SHA-256: `79c474ece86a3980f7b2535cb7d6a7886a4258f07beeff81105fde4b3ffb0e47`.
+- Result: `FINALIZED / ACCEPTED / MAJORITY_AGREE / SUCCESS`.
+- `runtime_chain_id()`: `61999`.
+- Explorer: https://explorer-studio.genlayer.com/tx/0x82a71dd9c47f2bc4c9a56afb008f35185b8bfb6182f631b67554c96674586d2a
+
+## Latest live declined-proposal cycle
+
+The latest canonical deployment used group `1` with commitments `[1,2,3,4]`. Commitment `1` was cancelled by its named actor without approval. Commitments `2`, `3`, and `4` were independently approved, the group sealed, and the active three-way cycle was proved.
+
+| Action | Transaction | Observed result |
+|---|---|---|
+| Create group 1 | `0xc847b13846be15bce81c0e75af16349b1ce2c4a9d2b948dbc839d6d9bc15a8af` | `ACCEPTED / MAJORITY_AGREE / SUCCESS` |
+| Seal group 1 after declined proposal | `0x922054c4603e854ce32fdb39b7c46d4fdc338a7f213d75abf3a0e92a9b84041d` | `ACCEPTED / MAJORITY_AGREE / SUCCESS` |
+| Incorrect CLI proof encoding (diagnostic only) | `0x9991ddac87c6c50333e9dacdaf9fc3c02388303b39f70352644e3a147acb1889` | `FINALIZED / ACCEPTED / FINISHED_WITH_ERROR` — four positional arguments supplied |
+| Correct cycle proof `[2,3,4]` | `0xf1fe357ad27dc53d8a28373d2850f91f46f963d601b8a6ebd1a2c44fba784767` | `FINALIZED / ACCEPTED / SUCCESS` |
+
+Final readbacks: group `1` had `cycle_count == 1`, `dependency_count == 3`; cycle `1` contained `[2,3,4]` and selected recovery commitment `4`; commitment `1` had `status == CANCELLED` and `actor_approved == false`; commitment `4` had `status == OVERRIDDEN`, `override_cycle_id == 1`, and `override_granted == true`.
+
+## Superseded actor-consent live cycle and deterministic recovery
+
+The actor-consent lifecycle below is superseded historical evidence and uses `0x0eF825bde4e7bB8D90F5Cc2aD52E80945E9a4768`.
 
 | Action | Transaction | Observed result |
 |---|---|---|
