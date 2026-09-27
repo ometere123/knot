@@ -596,3 +596,153 @@ class Knot(gl.Contract):
 
         active_count = 0
         for commitment_id in group.commitment_ids:
+            commitment = self._require_commitment(commitment_id)
+            if int(commitment.status) == COMMITMENT_ACTIVE:
+                active_count += 1
+        if active_count < MIN_GROUP_COMMITMENTS:
+            raise gl.vm.UserError(
+                f"{ERR_EXPECTED}: need at least {MIN_GROUP_COMMITMENTS} active commitments"
+            )
+
+        group.status = u8(GROUP_SEALED)
+        group.sealed_at = current_datetime()
+        GroupSealed(group_id, active_count=active_count).emit()
+
+    @gl.public.write
+    def mark_satisfied(self, commitment_id: u256) -> None:
+        commitment = self._require_commitment(commitment_id)
+        group = self._require_group(commitment.group_id)
+        if int(group.status) != GROUP_SEALED:
+            raise gl.vm.UserError(f"{ERR_STATE}: group must be sealed")
+        if commitment.actor != gl.message.sender_address:
+            raise gl.vm.UserError(f"{ERR_AUTH}: only the commitment actor may resolve it")
+        if int(commitment.status) != COMMITMENT_ACTIVE:
+            raise gl.vm.UserError(f"{ERR_STATE}: commitment is already terminal")
+
+        commitment.status = u8(COMMITMENT_SATISFIED)
+        commitment.resolved_at = current_datetime()
+        CommitmentResolved(commitment_id, u8(COMMITMENT_SATISFIED)).emit()
+
+    @gl.public.write
+    def prove_dependency(self, waiter_id: u256, provider_id: u256) -> u256:
+        waiter = self._require_commitment(waiter_id)
+        provider = self._require_commitment(provider_id)
+        if waiter.group_id != provider.group_id:
+            raise gl.vm.UserError(
+                f"{ERR_EXPECTED}: commitments must belong to the same group"
+            )
+        group = self._require_group(waiter.group_id)
+        if int(group.status) != GROUP_SEALED:
+            raise gl.vm.UserError(f"{ERR_STATE}: group must be sealed")
+
+        existing = self._existing_dependency_id(waiter_id, provider_id)
+        if int(existing) != 0:
+            return existing
+
+        payload = self._edge_payload(waiter.group_id, waiter_id, provider_id)
+        result = self._verify_cycle_semantics([payload])
+        ok = result.get("ok")
+        if not isinstance(ok, bool) or not ok:
+            raise gl.vm.UserError(
+                f"{ERR_EXPECTED}: dependency analysis was inconclusive"
+            )
+        try:
+            verdicts = normalise_verdicts(result.get("verdicts"), 1)
+        except Exception:
+            raise gl.vm.UserError(
+                f"{ERR_EXPECTED}: dependency analysis returned malformed verdicts"
+            )
+        if verdicts[0] != EDGE_REQUIRES:
+            raise gl.vm.UserError(
+                f"{ERR_EXPECTED}: provider output does not prove the waiter dependency"
+            )
+
+        return self._store_dependency(
+            group, waiter_id, provider_id, gl.message.sender_address
+        )
+
+    @gl.public.write
+    def prove_deadlock(self, group_id: u256, cycle_ids: DynArray[u256]) -> u256:
+        group = self._require_group(group_id)
+        if int(group.status) != GROUP_SEALED:
+            raise gl.vm.UserError(f"{ERR_STATE}: group must be sealed")
+
+        ids = self._copy_cycle_ids(cycle_ids)
+        payloads = self._edge_payloads(group_id, ids)
+
+        # Reuse already-proved semantic edges. Only missing edges require new
+        # nondeterministic work; once an edge is proved against immutable sealed
+        # commitment text, the receipt becomes reusable graph state.
+        missing_payloads: list[dict] = []
+        missing_pairs: list[list[int]] = []
+        count = len(ids)
+        for index in range(count):
+            waiter_id = u256(ids[index])
+            provider_id = u256(ids[(index + 1) % count])
+            existing = self._existing_dependency_id(waiter_id, provider_id)
+            if int(existing) == 0:
+                missing_payloads.append(payloads[index])
+                missing_pairs.append([ids[index], ids[(index + 1) % count]])
+
+        if len(missing_payloads) > 0:
+            result = self._verify_cycle_semantics(missing_payloads)
+            ok = result.get("ok")
+            if not isinstance(ok, bool) or not ok:
+                raise gl.vm.UserError(
+                    f"{ERR_EXPECTED}: dependency analysis was inconclusive"
+                )
+            try:
+                verdicts = normalise_verdicts(
+                    result.get("verdicts"), len(missing_payloads)
+                )
+            except Exception:
+                raise gl.vm.UserError(
+                    f"{ERR_EXPECTED}: dependency analysis returned malformed verdicts"
+                )
+            if any(verdict != EDGE_REQUIRES for verdict in verdicts):
+                raise gl.vm.UserError(
+                    f"{ERR_EXPECTED}: submitted commitments do not form a proved deadlock"
+                )
+
+            for pair in missing_pairs:
+                self._store_dependency(
+                    group,
+                    u256(pair[0]),
+                    u256(pair[1]),
+                    gl.message.sender_address,
+                )
+
+        # At this point every adjacent pair has a persisted positive dependency
+        # receipt, so the remaining closed-cycle proof is deterministic.
+        for index in range(count):
+            waiter_id = u256(ids[index])
+            provider_id = u256(ids[(index + 1) % count])
+            if int(self._existing_dependency_id(waiter_id, provider_id)) == 0:
+                raise gl.vm.UserError(
+                    f"{ERR_STATE}: dependency graph is incomplete after verification"
+                )
+
+        cycle_id = self.next_cycle_id
+        self.next_cycle_id = u256(int(self.next_cycle_id) + 1)
+
+        recovery_id = self._choose_recovery(group, ids)
+
+        certificate = self.cycles.get_or_insert_default(cycle_id)
+        certificate.group_id = group_id
+        certificate.reporter = gl.message.sender_address
+        certificate.created_at = current_datetime()
+        certificate.recovery_commitment_id = recovery_id
+        for raw_id in ids:
+            certificate.commitment_ids.append(u256(raw_id))
+
+        group.cycle_count = u32(int(group.cycle_count) + 1)
+
+        if int(recovery_id) != 0:
+            chosen = self._require_commitment(recovery_id)
+            if int(chosen.status) != COMMITMENT_ACTIVE:
+                raise gl.vm.UserError(
+                    f"{ERR_STATE}: recovery commitment is no longer active"
+                )
+            chosen.status = u8(COMMITMENT_OVERRIDDEN)
+            chosen.override_cycle_id = cycle_id
+            chosen.resolved_at = current_datetime()
