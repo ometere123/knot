@@ -19,7 +19,7 @@ The group creator chooses one of two recovery policies before sealing:
 1. `CERTIFY_ONLY`: prove the cycle but do not alter commitment state.
 2. `LOWEST_BREAK_COST`: after a valid cycle is proved, grant an override to the breakable commitment with the lowest declared cost, tie-breaking by commitment ID.
 
-Only the group creator may add commitments while the group is open. This prevents an unrelated wallet from consuming the bounded membership slots before the intended participants register. Each named actor must then approve the exact stored commitment before the creator can seal the group, binding the recovery terms to explicit actor consent. Once a cycle is certified, all cyclic rotations are indexed, so the same sealed cycle cannot create duplicate certificates or inflate `cycle_count`.
+Only the group creator may add commitments while the group is open. This prevents an unrelated wallet from consuming the bounded membership slots before the intended participants register. Each named actor must then approve the exact stored commitment before the creator can seal the group, binding the recovery terms to explicit actor consent. A cancelled proposal is excluded from membership, so it does not block sealing; every commitment still `ACTIVE` at seal time must be approved. Once a cycle is certified, all cyclic rotations are indexed, so the same sealed cycle cannot create duplicate certificates or inflate `cycle_count`.
 
 ## Semantic boundary
 

@@ -165,13 +165,40 @@ def test_unaccepted_commitment_cannot_be_sealed(
 
     with direct_vm.prank(direct_bob):
         contract.approve_commitment(a)
-    with direct_vm.expect_revert("every commitment requires actor approval"):
+    with direct_vm.expect_revert("every active commitment requires actor approval"):
         contract.seal_group(group_id)
 
     with direct_vm.prank(direct_charlie):
         contract.approve_commitment(b)
     contract.seal_group(group_id)
     assert contract.get_group(group_id)["status"] == 1
+
+
+def test_actor_can_decline_without_bricking_group(
+    direct_vm, direct_deploy, direct_alice, direct_bob, direct_charlie
+):
+    direct_vm.sender = direct_alice
+    contract = direct_deploy(CONTRACT, sdk_version="v0.2.12")
+    group_id = contract.create_group("Declined proposal", 1)
+    declined = contract.add_commitment(
+        group_id, direct_bob, "Declined", "Unused prerequisite", "Unused output", True, 90
+    )
+    accepted_a = contract.add_commitment(
+        group_id, direct_alice, "A", "Need C", "A done", True, 30
+    )
+    accepted_c = contract.add_commitment(
+        group_id, direct_charlie, "C", "Need A", "C done", True, 20
+    )
+
+    with direct_vm.prank(direct_bob):
+        contract.cancel_commitment(declined)
+    contract.approve_commitment(accepted_a)
+    with direct_vm.prank(direct_charlie):
+        contract.approve_commitment(accepted_c)
+
+    contract.seal_group(group_id)
+    assert contract.get_group(group_id)["status"] == 1
+    assert contract.get_commitment(declined)["status"] == 2
 
 
 def test_only_named_actor_can_accept_recovery_terms(

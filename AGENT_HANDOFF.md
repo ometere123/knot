@@ -34,7 +34,7 @@ The repository scripts intentionally call the local `node_modules/.bin/genlayer`
 - guarded Studionet deployment script;
 - live 61999 integration scenario;
 - GitHub Actions CI;
-- **24/24 Direct Mode tests green**.
+- **25/25 Direct Mode tests green**.
 
 Do not weaken tests or remove security checks to make later runtime steps pass.
 
@@ -77,7 +77,7 @@ pip install -r requirements-test.txt
 pytest tests/direct -v -s
 ```
 
-Expected baseline: **24 passed**.
+Expected baseline: **25 passed**.
 
 The tests explicitly request GenVM `v0.2.12`. Do not change them to an automatic latest v0.3 RC merely because a global toolchain is newer.
 

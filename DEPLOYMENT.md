@@ -121,11 +121,11 @@ The final corrected deployment is:
 | Source bytes | `35019` |
 | Deployment result | `FINALIZED / ACCEPTED / MAJORITY_AGREE / SUCCESS` |
 | Runtime chain readback | `61999` |
-| Direct Mode | `24/24 passed` |
+| Direct Mode | `25/25 passed` |
 
 Explorer: [final KNOT deployment](https://explorer-studio.genlayer.com/tx/0x95182bb4844e9adc9af3f88697019a54c98d51351cdb47845c3bbb064f53dd38)
 
-The deployed source includes the three narrow hardening fixes documented in `REVIEW_EVIDENCE.md`: only the group creator can fill open commitment slots, every named actor must approve the exact recovery terms before sealing, and a sealed cycle is indexed in every rotation so an equivalent certificate cannot be minted repeatedly.
+The deployed source includes the three deployed hardening fixes documented in `REVIEW_EVIDENCE.md`. The current repository additionally treats cancelled proposals as excluded membership: only commitments that remain `ACTIVE` require approval at seal time. This latest lifecycle fix is not part of the already-deployed source and requires a future deployment before it can be presented as live evidence.
 
 The final live evidence transaction table and state readbacks are maintained in `REVIEW_EVIDENCE.md`.
 

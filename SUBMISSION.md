@@ -116,4 +116,4 @@ The cycle certificate returned `[2, 3, 4]`, `cycle_count == 1`, and `dependency_
 
 A separate group `3` was sealed with unrelated declarations after both named actors approved. Its negative proof transaction was [`0xab0402b837952a7f6b615f8cdadcf8263ae97569085c86be0d05c2d94ac4e954`](https://explorer-studio.genlayer.com/tx/0xab0402b837952a7f6b615f8cdadcf8263ae97569085c86be0d05c2d94ac4e954). It finalized with consensus agreement but contract execution failed closed; the group readback remained `cycle_count == 0`.
 
-Direct Mode: **24/24 passed** (stable GenVM `v0.2.12`; repository CLI `0.39.1`).
+Direct Mode: **25/25 passed** (stable GenVM `v0.2.12`; repository CLI `0.39.1`).

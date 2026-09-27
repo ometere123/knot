@@ -645,9 +645,12 @@ class Knot(gl.Contract):
         active_count = 0
         for commitment_id in group.commitment_ids:
             commitment = self._require_commitment(commitment_id)
-            if not bool(commitment.actor_approved):
+            if (
+                int(commitment.status) == COMMITMENT_ACTIVE
+                and not bool(commitment.actor_approved)
+            ):
                 raise gl.vm.UserError(
-                    f"{ERR_AUTH}: every commitment requires actor approval before sealing"
+                    f"{ERR_AUTH}: every active commitment requires actor approval before sealing"
                 )
             if int(commitment.status) == COMMITMENT_ACTIVE:
                 active_count += 1

@@ -50,6 +50,10 @@ Only the group creator can add commitments. The actor is an explicit commitment 
 
 Adding a commitment does not constitute actor consent. The named actor must approve the exact stored commitment before the creator can seal the group. This binds the actor address, declarations, breakability and break cost to an explicit signed approval.
 
+### A declined proposal bricks an otherwise valid group
+
+An actor may cancel an unapproved commitment while the group is open. Cancelled commitments are terminal and excluded from seal membership; seal approval is required only for commitments that remain `ACTIVE`. This lets the creator continue with the remaining approved participants without allowing the declined proposal to enter a cycle.
+
 ### Duplicate cycle certificate inflation
 
 The contract indexes every rotation of a certified cycle by group and ordered commitment IDs. A repeated equivalent submission is rejected before another certificate or cycle-count increment is created, including CERTIFY_ONLY cycles.

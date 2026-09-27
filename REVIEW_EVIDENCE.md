@@ -8,7 +8,7 @@
 - CLI: GenLayer `0.39.1`.
 - Network guard: stable Studionet, chain `61999`, RPC `https://studio.genlayer.com/api`.
 - Pinned runner: `py-genlayer:1jb45aa8ynh2a9c9xn3b7qqh8sm5q93hwfp7jqmwsfhh8jpz09h6`.
-- Direct Mode: `24/24 passed` under WSL with `genlayer-test 0.29.2` and stable GenVM `v0.2.12`.
+- Direct Mode: `25/25 passed` under WSL with `genlayer-test 0.29.2` and stable GenVM `v0.2.12`.
 - Preflight: `KNOT offline preflight: OK`.
 - Compileall: passed.
 - `runtime_chain_id()` on the final deployment: `61999`.
@@ -97,5 +97,6 @@ It finalized with consensus agreement but contract execution failed closed. The 
 - `test_duplicate_cycle_certificate_is_rejected`: a second submission of the same cycle in a rotated order is rejected and `cycle_count` remains `1`.
 - `test_unaccepted_commitment_cannot_be_sealed`: the creator cannot seal while any commitment remains unaccepted.
 - `test_only_named_actor_can_accept_recovery_terms`: another wallet cannot approve or attribute the named actor's recovery terms.
+- `test_actor_can_decline_without_bricking_group`: a named actor can cancel an unapproved proposal, while two approved active commitments still allow the group to seal.
 
 The source remains a standalone Intelligent Contract primitive with no frontend.
