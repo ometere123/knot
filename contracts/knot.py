@@ -746,3 +746,111 @@ class Knot(gl.Contract):
             chosen.status = u8(COMMITMENT_OVERRIDDEN)
             chosen.override_cycle_id = cycle_id
             chosen.resolved_at = current_datetime()
+            RecoveryGranted(
+                cycle_id,
+                recovery_id,
+                break_cost=int(chosen.break_cost),
+            ).emit()
+
+        DeadlockProved(
+            cycle_id,
+            group_id,
+            cycle_size=len(ids),
+            recovery_commitment_id=int(recovery_id),
+        ).emit()
+        return cycle_id
+
+    # ------------------------------------------------------------------
+    # Views
+    # ------------------------------------------------------------------
+
+    @gl.public.view
+    def get_group(self, group_id: u256) -> dict:
+        group = self._require_group(group_id)
+        return {
+            "id": int(group_id),
+            "creator": str(group.creator),
+            "title": str(group.title),
+            "status": int(group.status),
+            "recovery_mode": int(group.recovery_mode),
+            "created_at": str(group.created_at),
+            "sealed_at": str(group.sealed_at),
+            "cycle_count": int(group.cycle_count),
+            "dependency_count": int(group.dependency_count),
+            "commitment_ids": [int(value) for value in group.commitment_ids],
+        }
+
+    @gl.public.view
+    def get_commitment(self, commitment_id: u256) -> dict:
+        commitment = self._require_commitment(commitment_id)
+        return {
+            "id": int(commitment_id),
+            "group_id": int(commitment.group_id),
+            "actor": str(commitment.actor),
+            "obligation": str(commitment.obligation),
+            "prerequisite": str(commitment.prerequisite),
+            "provides": str(commitment.provides),
+            "breakable": bool(commitment.breakable),
+            "break_cost": int(commitment.break_cost),
+            "status": int(commitment.status),
+            "created_at": str(commitment.created_at),
+            "resolved_at": str(commitment.resolved_at),
+            "override_cycle_id": int(commitment.override_cycle_id),
+            "override_granted": int(commitment.status) == COMMITMENT_OVERRIDDEN,
+        }
+
+    @gl.public.view
+    def get_cycle(self, cycle_id: u256) -> dict:
+        certificate = self._require_cycle(cycle_id)
+        return {
+            "id": int(cycle_id),
+            "group_id": int(certificate.group_id),
+            "reporter": str(certificate.reporter),
+            "created_at": str(certificate.created_at),
+            "recovery_commitment_id": int(certificate.recovery_commitment_id),
+            "commitment_ids": [int(value) for value in certificate.commitment_ids],
+        }
+
+    @gl.public.view
+    def get_dependency(self, waiter_id: u256, provider_id: u256) -> dict:
+        dependency_id = self._existing_dependency_id(waiter_id, provider_id)
+        if int(dependency_id) == 0:
+            raise gl.vm.UserError(f"{ERR_EXPECTED}: dependency is not proved")
+        receipt = self._require_dependency(dependency_id)
+        return {
+            "id": int(dependency_id),
+            "group_id": int(receipt.group_id),
+            "waiter_id": int(receipt.waiter_id),
+            "provider_id": int(receipt.provider_id),
+            "reporter": str(receipt.reporter),
+            "created_at": str(receipt.created_at),
+            "verdict": EDGE_REQUIRES,
+        }
+
+    @gl.public.view
+    def is_dependency(self, waiter_id: u256, provider_id: u256) -> bool:
+        return int(self._existing_dependency_id(waiter_id, provider_id)) != 0
+
+    @gl.public.view
+    def has_override(self, commitment_id: u256) -> bool:
+        commitment = self._require_commitment(commitment_id)
+        return int(commitment.status) == COMMITMENT_OVERRIDDEN
+
+    @gl.public.view
+    def runtime_chain_id(self) -> u256:
+        return gl.message.chain_id
+
+    @gl.public.view
+    def protocol_constants(self) -> dict:
+        return {
+            "group_open": GROUP_OPEN,
+            "group_sealed": GROUP_SEALED,
+            "commitment_active": COMMITMENT_ACTIVE,
+            "commitment_satisfied": COMMITMENT_SATISFIED,
+            "commitment_cancelled": COMMITMENT_CANCELLED,
+            "commitment_overridden": COMMITMENT_OVERRIDDEN,
+            "recovery_certify_only": RECOVERY_CERTIFY_ONLY,
+            "recovery_lowest_break_cost": RECOVERY_LOWEST_BREAK_COST,
+            "max_group_commitments": MAX_GROUP_COMMITMENTS,
+            "max_cycle_size": MAX_CYCLE_SIZE,
+        }
